@@ -3,8 +3,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.Maui.Storage;
 using Microsoft.Maui.Devices.Sensors;
+using System.Threading.Tasks;
 using Microsoft.Maui.Dispatching;
 using Microsoft.Maui;
+using Microsoft.Maui.ApplicationModel;
 using WearCar.Services;
 
 namespace WearCar.ViewModels
@@ -47,29 +49,49 @@ namespace WearCar.ViewModels
                 }
                 else
                 {
-                    // no parked location saved -- attempt to get current location once and use it as parked
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            var request = new GeolocationRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(10));
-                            var loc = await Geolocation.GetLocationAsync(request);
-                            if (loc != null)
-                            {
-                                Preferences.Set("ParkedLatitude", loc.Latitude);
-                                Preferences.Set("ParkedLongitude", loc.Longitude);
-                                Preferences.Set("ParkedTimestamp", DateTimeOffset.UtcNow.ToString("o"));
+                    // no parked location saved -- ask the user if we should use current location
+                    MainThread.BeginInvokeOnMainThread(() => _ = InitializeInitialParkedAsync());
+                }
+            }
+            catch { }
+        }
 
-                                // update properties on main thread
-                                MainThread.BeginInvokeOnMainThread(() =>
-                                {
-                                    ParkedLatitude = loc.Latitude;
-                                    ParkedLongitude = loc.Longitude;
-                                });
-                            }
-                        }
-                        catch { }
-                    });
+        async Task InitializeInitialParkedAsync()
+        {
+            try
+            {
+                var page = Application.Current?.MainPage;
+                if (page == null)
+                    return;
+
+                bool use = await page.DisplayAlert("Set parked location?", "No parked location found. Use current location as parked location?", "Yes", "No");
+                if (!use)
+                    return;
+
+                var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+                if (status != PermissionStatus.Granted)
+                    status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+
+                if (status == PermissionStatus.Granted)
+                {
+                    var request = new GeolocationRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(10));
+                    var loc = await Geolocation.GetLocationAsync(request);
+                    if (loc != null)
+                    {
+                        Preferences.Set("ParkedLatitude", loc.Latitude);
+                        Preferences.Set("ParkedLongitude", loc.Longitude);
+                        Preferences.Set("ParkedTimestamp", DateTimeOffset.UtcNow.ToString("o"));
+
+                        MainThread.BeginInvokeOnMainThread(() =>
+                        {
+                            ParkedLatitude = loc.Latitude;
+                            ParkedLongitude = loc.Longitude;
+                        });
+                    }
+                }
+                else
+                {
+                    await page.DisplayAlert("Permission required", "Location permission is required to set the initial parked location.", "OK");
                 }
             }
             catch { }

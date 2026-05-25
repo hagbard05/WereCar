@@ -10,24 +10,25 @@ namespace WearCar.Services
 {
 	public class ParkingDetectorService : IAsyncDisposable
 	{
-		CancellationTokenSource _cts;
-		Task _loopTask;
-		Location _prevLocation;
-		DateTimeOffset _prevTime;
-		bool _aboveThreshold;
-		DateTimeOffset _aboveSince;
-		bool _wasMoving;
+		CancellationTokenSource? _cts;
+		Task? _loopTask;
+		Location? _prevLocation;
+		private DateTimeOffset _prevTime;
+		private bool _aboveThreshold;
+		private DateTimeOffset _aboveSince;
+		private bool _wasMoving;
 
-		const double MphThreshold = 5.0;
+		private const double MphThreshold = 5.0;
 		readonly TimeSpan AboveDuration = TimeSpan.FromSeconds(30);
-		readonly TimeSpan BelowDuration = TimeSpan.FromSeconds(10);
+		private static readonly TimeSpan timeSpan = TimeSpan.FromSeconds(10);
+		readonly TimeSpan BelowDuration = timeSpan;
 
 		public event EventHandler<Location> ParkedLocationSaved;
 
 		public void Start()
 		{
 			if (_loopTask != null)
-				return;
+				return;  
 
 			_cts = new CancellationTokenSource();
 			_loopTask = Task.Run(() => LoopAsync(_cts.Token));
@@ -116,10 +117,7 @@ namespace WearCar.Services
 				{
 					break;
 				}
-				catch (Exception)
-				{
-					// swallow and continue
-				}
+				catch (Exception) { }
 
 				try { await Task.Delay(1000, token); } catch { }
 			}
@@ -140,7 +138,6 @@ namespace WearCar.Services
 					return mps * 2.23693629;
 				}
 			}
-
 			return 0.0;
 		}
 

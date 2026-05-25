@@ -16,14 +16,14 @@
 				var services = Application.Current?.Handler?.MauiContext?.Services;
 				if (services == null)
 				{
-					await DisplayAlert("Error", "Services are not available.", "OK");
+					await DisplayAlertAsync("Error", "Services are not available.", "OK");
 					return;
 				}
 
 				var page = services.GetService<WearCar.Views.ParkedMapPage>();
 				if (page == null)
 				{
-					await DisplayAlert("Error", "Parked Map page is not registered.", "OK");
+					await DisplayAlertAsync("Error", "Parked Map page is not registered.", "OK");
 					return;
 				}
 
@@ -31,7 +31,7 @@
 			}
 			catch (Exception ex)
 			{
-				await DisplayAlert("Error", ex.Message, "OK");
+				await DisplayAlertAsync("Error", ex.Message, "OK");
 			}
 		}
 
