@@ -1,8 +1,5 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <filter id="dropshadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#0B3C8C" flood-opacity="0.35"/>
-    </filter>
     <linearGradient id="leftFill" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#1D4ED8"/>
       <stop offset="100%" stop-color="#3B7CF0"/>
@@ -13,7 +10,7 @@
     </linearGradient>
   </defs>
 
-  <g filter="url(#dropshadow)">
+  <g>
     <path d="M 256 70 L 118 400 L 256 300 Z" fill="url(#leftFill)"/>
     <path d="M 256 70 L 394 400 L 256 300 Z" fill="url(#rightFill)"/>
     <path d="M 256 70 L 394 400 L 256 300 L 118 400 Z" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
