@@ -66,7 +66,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <MauiImage Include="..\..\..\..\Downloads\compass-arrow-pointer.svg" Link="Resources\Images\compass-arrow-pointer.svg" />
+	  <MauiImage Include="..\..\..\..\Downloads\compass-arrow-pointer.svg" Link="Resources\Images\compass_arrow_pointer.svg" />
 	</ItemGroup>
 
 	<ItemGroup>
