@@ -11,11 +11,8 @@
 
         <Grid Row="1">
             <Grid>
-                <ContentView x:Name="ArrowContainer" HorizontalOptions="Center" VerticalOptions="Center">
-                    <StackLayout Orientation="Horizontal" HorizontalOptions="Center" VerticalOptions="Center" Spacing="0">
-                        <BoxView x:Name="ShaftBox" HeightRequest="14" WidthRequest="240" Color="White" VerticalOptions="Center" AnchorX="0" ScaleX="0.25" />
-                        <Image x:Name="HeadImage" Source="compass-arrow-pointer.svg" WidthRequest="48" HeightRequest="48" VerticalOptions="Center" />
-                    </StackLayout>
+                <ContentView x:Name="ArrowContainer" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
+                    <Image x:Name="HeadImage" Source="compass-arrow-pointer.svg" Aspect="AspectFit" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" />
                 </ContentView>
                 <Label Text="Pointing to parked car" HorizontalOptions="Center" VerticalOptions="End" />
             </Grid>
