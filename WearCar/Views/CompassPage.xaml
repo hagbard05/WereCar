@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="WearCar.Views.CompassPage"
+             Title="Find Car">
+    <Grid RowDefinitions="Auto,*" Padding="12">
+        <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Spacing="12">
+            <Label Text="Distance:" VerticalOptions="Center" />
+            <Label Text="{Binding DistanceText}" FontAttributes="Bold" VerticalOptions="Center" />
+        </StackLayout>
+
+        <Grid Row="1">
+            <Grid>
+                <ContentView x:Name="ArrowContainer" HorizontalOptions="Center" VerticalOptions="Center">
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="Center" VerticalOptions="Center" Spacing="0">
+                        <BoxView x:Name="ShaftBox" HeightRequest="14" WidthRequest="240" Color="White" VerticalOptions="Center" AnchorX="0" ScaleX="0.25" />
+                        <Image x:Name="HeadImage" Source="compass-arrow-pointer.svg" WidthRequest="48" HeightRequest="48" VerticalOptions="Center" />
+                    </StackLayout>
+                </ContentView>
+                <Label Text="Pointing to parked car" HorizontalOptions="Center" VerticalOptions="End" />
+            </Grid>
+        </Grid>
+    </Grid>
+</ContentPage>
