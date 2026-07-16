@@ -12,7 +12,7 @@
         <Grid Row="1">
             <Grid>
                 <ContentView x:Name="ArrowContainer" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
-                    <Image x:Name="HeadImage" Source="compass-arrow-pointer.svg" Aspect="AspectFit" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" />
+                    <Image x:Name="HeadImage" Source="compass_arrow_pointer.svg" Aspect="AspectFit" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" />
                 </ContentView>
                 <Label Text="Pointing to parked car" HorizontalOptions="Center" VerticalOptions="End" />
             </Grid>
