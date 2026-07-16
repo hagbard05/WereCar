@@ -15,6 +15,8 @@ namespace WearCar.Views
         readonly ParkedMapViewModel _vm;
         CancellationTokenSource _cts = new CancellationTokenSource();
 
+        bool _webViewLoaded = false;
+
         const string HtmlTemplate = @"<!DOCTYPE html>
 <html>
 <head>
@@ -45,10 +47,11 @@ namespace WearCar.Views
             _vm.PropertyChanged += Vm_PropertyChanged;
 
             MapWebView.Source = new HtmlWebViewSource { Html = HtmlTemplate };
+            MapWebView.Navigated += MapWebView_Navigated;
 
             StartUserLocationLoop(_cts.Token);
 
-            if (_vm.ParkedLatitude.HasValue && _vm.ParkedLongitude.HasValue)
+            if (_webViewLoaded && _vm.ParkedLatitude.HasValue && _vm.ParkedLongitude.HasValue)
             {
                 _ = AddOrUpdateParkedAsync(_vm.ParkedLatitude.Value, _vm.ParkedLongitude.Value);
             }
@@ -58,10 +61,19 @@ namespace WearCar.Views
         {
             if (e.PropertyName == nameof(_vm.ParkedLatitude) || e.PropertyName == nameof(_vm.ParkedLongitude))
             {
-                if (_vm.ParkedLatitude.HasValue && _vm.ParkedLongitude.HasValue)
+                if (_vm.ParkedLatitude.HasValue && _vm.ParkedLongitude.HasValue && _webViewLoaded)
                 {
                     _ = AddOrUpdateParkedAsync(_vm.ParkedLatitude.Value, _vm.ParkedLongitude.Value);
                 }
+            }
+        }
+
+        void MapWebView_Navigated(object? sender, WebNavigatedEventArgs e)
+        {
+            _webViewLoaded = true;
+            if (_vm.ParkedLatitude.HasValue && _vm.ParkedLongitude.HasValue)
+            {
+                _ = AddOrUpdateParkedAsync(_vm.ParkedLatitude.Value, _vm.ParkedLongitude.Value);
             }
         }
 

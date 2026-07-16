@@ -19,7 +19,7 @@ namespace WearCar.Services
 		private bool _wasMoving;
 
 		private const double MphThreshold = 5.0;
-		readonly TimeSpan AboveDuration = TimeSpan.FromSeconds(30);
+		readonly TimeSpan AboveDuration = TimeSpan.FromSeconds(20);
 		private static readonly TimeSpan timeSpan = TimeSpan.FromSeconds(10);
 		readonly TimeSpan BelowDuration = timeSpan;
 
@@ -99,9 +99,9 @@ namespace WearCar.Services
 									}
 
 									if (remainedBelow)
-								{
-									SaveParked(latest);
-								}
+									{
+										SaveParked(latest);
+									}
 								}
 
 								_aboveThreshold = false;

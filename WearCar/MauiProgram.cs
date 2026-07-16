@@ -33,6 +33,8 @@ namespace WearCar
 			// viewmodel and page registrations
 			builder.Services.AddSingleton<ParkedMapViewModel>();
 			builder.Services.AddTransient<ParkedMapPage>();
+			// compass (new default startup view)			builder.Services.AddSingleton<CompassViewModel>();
+			builder.Services.AddTransient<CompassPage>();
 
 			return builder.Build();
 		}
