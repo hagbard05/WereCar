@@ -11,17 +11,13 @@ namespace WearCar.Services
 	public class ParkingDetectorService : IAsyncDisposable
 	{
 		CancellationTokenSource? _cts;
-		Task? _loopTask;
-		Location? _prevLocation;
-		private DateTimeOffset _prevTime;
-		private bool _aboveThreshold;
-		private DateTimeOffset _aboveSince;
-		private bool _wasMoving;
+			Task? _loopTask;
+			Location? _prevLocation;
+			private DateTimeOffset _prevTime;
+			private bool _aboveThreshold;
 
 		private const double MphThreshold = 5.0;
-		readonly TimeSpan AboveDuration = TimeSpan.FromSeconds(20);
-		private static readonly TimeSpan timeSpan = TimeSpan.FromSeconds(10);
-		readonly TimeSpan BelowDuration = timeSpan;
+			readonly TimeSpan BelowDuration = TimeSpan.FromSeconds(10);
 
 		public event EventHandler<Location> ParkedLocationSaved;
 
@@ -47,81 +43,70 @@ namespace WearCar.Services
 		}
 
 		async Task LoopAsync(CancellationToken token)
-		{
-			var request = new GeolocationRequest(GeolocationAccuracy.Best);
-			while (!token.IsCancellationRequested)
 			{
-				try
+				var request = new GeolocationRequest(GeolocationAccuracy.Best);
+				while (!token.IsCancellationRequested)
 				{
-					var loc = await Geolocation.GetLocationAsync(request, token);
-					if (loc != null)
+					try
 					{
-						var now = DateTimeOffset.UtcNow;
-						double speedMph = await CalculateSpeedMph(loc, now);
-
-						if (speedMph >= MphThreshold)
+						var loc = await Geolocation.GetLocationAsync(request, token);
+						if (loc != null)
 						{
-							if (!_aboveThreshold)
+							var now = DateTimeOffset.UtcNow;
+							double speedMph = await CalculateSpeedMph(loc, now);
+
+							if (speedMph >= MphThreshold)
 							{
+								// Currently driving
 								_aboveThreshold = true;
-								_aboveSince = now;
 							}
-							else
+							else if (_aboveThreshold)
 							{
-								if (!_wasMoving && now - _aboveSince >= AboveDuration)
-									_wasMoving = true;
-							}
-						}
-						else
-						{
-							if (_aboveThreshold)
-							{
-								// device was above threshold previously; confirm it stays below for BelowDuration
-								if (_wasMoving)
-								{
-									var lowStart = DateTimeOffset.UtcNow;
-									bool remainedBelow = true;
-									Location latest = loc;
-									while (!token.IsCancellationRequested && (DateTimeOffset.UtcNow - lowStart) < BelowDuration)
-									{
-										await Task.Delay(1000, token);
-										var l2 = await Geolocation.GetLocationAsync(request, token);
-										if (l2 == null)
-										{
-											remainedBelow = false; break;
-										}
-										double s2 = await CalculateSpeedMph(l2, DateTimeOffset.UtcNow);
-										if (s2 >= MphThreshold)
-										{
-											remainedBelow = false; break;
-										}
-										latest = l2;
-									}
+								// Transitioned from driving (≥5 mph) to not driving (<5 mph)
+								// Confirm speed stays below threshold for BelowDuration, then save
+								var lowStart = DateTimeOffset.UtcNow;
+								bool remainedBelow = true;
+								Location latest = loc;
 
-									if (remainedBelow)
+								while (!token.IsCancellationRequested && (DateTimeOffset.UtcNow - lowStart) < BelowDuration)
+								{
+									await Task.Delay(1000, token);
+									var l2 = await Geolocation.GetLocationAsync(request, token);
+									if (l2 == null)
 									{
-										SaveParked(latest);
+										remainedBelow = false;
+										break;
 									}
+									double s2 = await CalculateSpeedMph(l2, DateTimeOffset.UtcNow);
+									if (s2 >= MphThreshold)
+									{
+										remainedBelow = false;
+										break;
+									}
+									latest = l2;
+								}
+
+								if (remainedBelow)
+								{
+									SaveParked(latest);
 								}
 
 								_aboveThreshold = false;
-								_wasMoving = false;
 							}
+
+							_prevLocation = loc;
+							_prevTime = now;
 						}
-
-						_prevLocation = loc;
-						_prevTime = now;
 					}
-				}
-				catch (OperationCanceledException)
-				{
-					break;
-				}
-				catch (Exception) { }
+					catch (OperationCanceledException)
+					{
+						break;
+					}
+					catch (Exception) { }
 
-				try { await Task.Delay(1000, token); } catch { }
+					try { await Task.Delay(1000, token); } catch { }
+				}
 			}
-		}
 
 		async Task<double> CalculateSpeedMph(Location loc, DateTimeOffset now)
 		{
