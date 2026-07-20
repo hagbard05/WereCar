@@ -14,7 +14,10 @@
                 <ContentView x:Name="ArrowContainer" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand">
                     <Image x:Name="HeadImage" Source="compass_arrow_pointer.svg" Aspect="AspectFit" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" />
                 </ContentView>
-                <Label Text="Pointing to parked car" HorizontalOptions="Center" VerticalOptions="End" />
+                <StackLayout Orientation="Vertical" HorizontalOptions="Center" VerticalOptions="End" Spacing="4">
+                    <Label Text="Pointing to parked car" HorizontalOptions="Center" />
+                    <Label x:Name="SpeedLabel" Text="{Binding CurrentSpeedText}" HorizontalOptions="Center" FontSize="12" TextColor="Gray" />
+                </StackLayout>
             </Grid>
         </Grid>
     </Grid>

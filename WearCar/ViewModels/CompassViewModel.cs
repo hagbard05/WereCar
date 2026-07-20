@@ -23,8 +23,15 @@ namespace WearCar.ViewModels
         double _arrowRotation; // degrees to rotate arrow (0 = north)
         string _distanceText = "--";
         double _arrowLength = 60; // UI length in device-independent pixels (will scale logarithmically with distance)
+        string _currentSpeedText = "-- mph";
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+        public string CurrentSpeedText
+        {
+            get => _currentSpeedText;
+            private set { _currentSpeedText = value; OnPropertyChanged(); }
+        }
 
         public double ArrowRotation
         {
@@ -144,6 +151,8 @@ namespace WearCar.ViewModels
 
         double _latestHeading = 0.0;
         double? _currentBearing = null;
+        dynamic _lastLocation = null;
+        DateTimeOffset _lastTime = default;
 
         void UpdateBearingAndDistance(double curLat, double curLon, double tgtLat, double tgtLon)
         {
@@ -152,6 +161,21 @@ namespace WearCar.ViewModels
             var distMeters = HaversineInMeters(curLat, curLon, tgtLat, tgtLon);
             var distText = distMeters >= 1000 ? (distMeters / 1000.0).ToString("0.0") + " km" : Math.Round(distMeters).ToString() + " m";
             DistanceText = distText;
+
+            double speedMph = 0.0;
+            if (_lastLocation != null && _lastTime != default)
+            {
+                var dt = (DateTimeOffset.UtcNow - _lastTime).TotalSeconds;
+                if (dt > 0)
+                {
+                    var meters = HaversineInMeters(_lastLocation.Latitude, _lastLocation.Longitude, curLat, curLon);
+                    var mps = meters / dt;
+                    speedMph = mps * 2.23693629;
+                }
+            }
+            CurrentSpeedText = speedMph.ToString("0.0") + " mph";
+            _lastLocation = new { Latitude = curLat, Longitude = curLon };
+            _lastTime = DateTimeOffset.UtcNow;
 
             // Compute arrow length on a logarithmic scale so it grows quickly at short ranges then tapers off
             try

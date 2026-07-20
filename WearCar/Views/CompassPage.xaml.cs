@@ -9,21 +9,26 @@ namespace WearCar.Views
 	{
 		readonly CompassViewModel _vm;
 
-		public CompassPage(CompassViewModel vm)
-		{
-			InitializeComponent();
-			BindingContext = _vm = vm;
-			_vm.PropertyChanged += Vm_PropertyChanged;
-			// initialize visual state
-			try
-			{
-				ArrowContainer.AnchorX = 0.5;
-				ArrowContainer.AnchorY = 0.5;
-				ArrowContainer.Rotation = _vm.ArrowRotation;
-				ArrowContainer.Scale = Math.Min(1.0, _vm.ArrowLength / 240.0);
-			}
-			catch { }
-		}
+			public CompassPage(CompassViewModel vm)
+				{
+					InitializeComponent();
+					BindingContext = _vm = vm;
+					_vm.PropertyChanged += Vm_PropertyChanged;
+
+		#if !DEBUG
+					SpeedLabel.IsVisible = false;
+		#endif
+
+					// initialize visual state
+					try
+					{
+						ArrowContainer.AnchorX = 0.5;
+						ArrowContainer.AnchorY = 0.5;
+						ArrowContainer.Rotation = _vm.ArrowRotation;
+						ArrowContainer.Scale = Math.Min(1.0, _vm.ArrowLength / 240.0);
+					}
+					catch { }
+				}
 
 		protected override async void OnAppearing()
 		{
