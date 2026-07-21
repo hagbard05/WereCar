@@ -25,6 +25,10 @@ namespace WearCar.ViewModels
         double _arrowLength = 60; // UI length in device-independent pixels (will scale logarithmically with distance)
         string _currentSpeedText = "-- mph";
 
+        // Speed smoothing for debug display
+        private readonly Queue<double> _speedHistory = new Queue<double>(3);
+        private const int SpeedHistorySize = 3;
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         public string CurrentSpeedText
@@ -173,7 +177,14 @@ namespace WearCar.ViewModels
                     speedMph = mps * 2.23693629;
                 }
             }
-            CurrentSpeedText = speedMph.ToString("0.0") + " mph";
+
+            // Apply moving average smoothing to reduce GPS noise
+            _speedHistory.Enqueue(speedMph);
+            if (_speedHistory.Count > SpeedHistorySize)
+                _speedHistory.Dequeue();
+
+            double smoothedSpeed = _speedHistory.Average();
+            CurrentSpeedText = smoothedSpeed.ToString("0.0") + " mph";
             _lastLocation = new { Latitude = curLat, Longitude = curLon };
             _lastTime = DateTimeOffset.UtcNow;
 

@@ -11,13 +11,17 @@ namespace WearCar.Services
 	public class ParkingDetectorService : IAsyncDisposable
 	{
 		CancellationTokenSource? _cts;
-			Task? _loopTask;
-			Location? _prevLocation;
-			private DateTimeOffset _prevTime;
-			private bool _aboveThreshold;
+		Task? _loopTask;
+		Location? _prevLocation;
+		private DateTimeOffset _prevTime;
+		private bool _aboveThreshold;
 
-		private const double MphThreshold = 5.0;
-			readonly TimeSpan BelowDuration = TimeSpan.FromSeconds(10);
+		private const double MphThreshold = 10.0;
+		readonly TimeSpan BelowDuration = TimeSpan.FromSeconds(10);
+
+		// Speed smoothing: keep last 3 speeds for moving average
+		private readonly Queue<double> _speedHistory = new Queue<double>(3);
+		private const int SpeedHistorySize = 3;
 
 		public event EventHandler<Location> ParkedLocationSaved;
 
@@ -109,22 +113,29 @@ namespace WearCar.Services
 			}
 
 		async Task<double> CalculateSpeedMph(Location loc, DateTimeOffset now)
-		{
-			if (loc.Speed.HasValue)
-				return loc.Speed.Value * 2.23693629; // m/s to mph
-
-			if (_prevLocation != null && _prevTime != default)
 			{
-				var dt = (now - _prevTime).TotalSeconds;
-				if (dt > 0)
+				double rawSpeed = 0.0;
+
+				if (loc.Speed.HasValue)
+					rawSpeed = loc.Speed.Value * 2.23693629; // m/s to mph
+				else if (_prevLocation != null && _prevTime != default)
 				{
-					var meters = HaversineInMeters(_prevLocation.Latitude, _prevLocation.Longitude, loc.Latitude, loc.Longitude);
-					var mps = meters / dt;
-					return mps * 2.23693629;
+					var dt = (now - _prevTime).TotalSeconds;
+					if (dt > 0)
+					{
+						var meters = HaversineInMeters(_prevLocation.Latitude, _prevLocation.Longitude, loc.Latitude, loc.Longitude);
+						var mps = meters / dt;
+						rawSpeed = mps * 2.23693629;
+					}
 				}
+
+				// Apply moving average smoothing to reduce GPS noise
+				_speedHistory.Enqueue(rawSpeed);
+				if (_speedHistory.Count > SpeedHistorySize)
+					_speedHistory.Dequeue();
+
+				return _speedHistory.Average();
 			}
-			return 0.0;
-		}
 
 		double HaversineInMeters(double lat1, double lon1, double lat2, double lon2)
 		{
