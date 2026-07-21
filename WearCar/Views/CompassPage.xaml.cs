@@ -25,7 +25,7 @@ namespace WearCar.Views
 						ArrowContainer.AnchorX = 0.5;
 						ArrowContainer.AnchorY = 0.5;
 						ArrowContainer.Rotation = _vm.ArrowRotation;
-						ArrowContainer.Scale = Math.Min(1.0, _vm.ArrowLength / 240.0);
+						HeadImage.HeightRequest = _vm.ArrowLength;
 					}
 					catch { }
 				}
@@ -60,12 +60,11 @@ namespace WearCar.Views
 			{
 				try
 				{
-					double maxLen = 240.0;
-					double targetScale = Math.Min(1.0, Math.Max(0.0, _vm.ArrowLength / maxLen));
+					double targetHeight = _vm.ArrowLength;
 
-					// animate container scale smoothly
-					var scaleAnim = new Microsoft.Maui.Controls.Animation(v => ArrowContainer.Scale = v, ArrowContainer.Scale, targetScale);
-					MainThread.BeginInvokeOnMainThread(() => scaleAnim.Commit(this, "ArrowScale", length: 350, easing: Easing.CubicInOut));
+					// animate height smoothly
+					var heightAnim = new Microsoft.Maui.Controls.Animation(v => HeadImage.HeightRequest = v, HeadImage.HeightRequest, targetHeight);
+					MainThread.BeginInvokeOnMainThread(() => heightAnim.Commit(this, "ArrowHeight", length: 350, easing: Easing.CubicInOut));
 				}
 				catch { }
 			}
