@@ -26,8 +26,10 @@ namespace WearCar.ViewModels
         string _currentSpeedText = "-- mph";
 
         // Speed smoothing for debug display
-        private readonly Queue<double> _speedHistory = new Queue<double>(3);
-        private const int SpeedHistorySize = 3;
+        private readonly Queue<double> _speedHistory = new Queue<double>(5);
+        private const int SpeedHistorySize = 5;
+        private const double LowSpeedNoiseGateMph = 1.5;
+        private const double AccuracyThresholdMeters = 25.0;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -87,19 +89,37 @@ namespace WearCar.ViewModels
         {
             try
             {
-                var status = await Permissions.CheckStatusAsync<Permissions.LocationAlways>();
-                if (status != PermissionStatus.Granted)
+                // 1. Request foreground (when in use) location permission first
+                var whenInUseStatus = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+                if (whenInUseStatus != PermissionStatus.Granted)
                 {
-                    status = await Permissions.RequestAsync<Permissions.LocationAlways>();
+                    whenInUseStatus = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
                 }
 
-                if (status != PermissionStatus.Granted)
+                // 2. Request background (always) location permission
+                var alwaysStatus = await Permissions.CheckStatusAsync<Permissions.LocationAlways>();
+                if (alwaysStatus != PermissionStatus.Granted)
+                {
+                    alwaysStatus = await Permissions.RequestAsync<Permissions.LocationAlways>();
+                }
+
+                // 3. Request Notification permission on Android 13+ if needed for foreground service
+                if (DeviceInfo.Platform == DevicePlatform.Android)
+                {
+                    var notifStatus = await Permissions.CheckStatusAsync<Permissions.PostNotifications>();
+                    if (notifStatus != PermissionStatus.Granted)
+                    {
+                        await Permissions.RequestAsync<Permissions.PostNotifications>();
+                    }
+                }
+
+                if (alwaysStatus != PermissionStatus.Granted)
                 {
                     await MainThread.InvokeOnMainThreadAsync(async () =>
                     {
                         if (Application.Current?.MainPage != null)
                         {
-                            await Application.Current.MainPage.DisplayAlert("Permission required", "Background location access is required for continuous parking detection and compass pointer. Please enable Location (Always) in system settings.", "OK");
+                            await Application.Current.MainPage.DisplayAlert("Background Location Required", "Continuous background location access ('Allow all the time') is required to detect when you park your car. Please enable 'Allow all the time' in location settings.", "OK");
                         }
                     });
                 }
@@ -124,7 +144,7 @@ namespace WearCar.ViewModels
                             var loc = await Geolocation.GetLocationAsync(request, token);
                             if (loc != null && _targetLat.HasValue && _targetLon.HasValue)
                             {
-                                UpdateBearingAndDistance(loc.Latitude, loc.Longitude, _targetLat.Value, _targetLon.Value);
+                                UpdateBearingAndDistance(loc, _targetLat.Value, _targetLon.Value);
                             }
                         }
                         catch (OperationCanceledException) { break; }
@@ -155,19 +175,34 @@ namespace WearCar.ViewModels
 
         double _latestHeading = 0.0;
         double? _currentBearing = null;
-        dynamic _lastLocation = null;
+        Location? _lastLocation = null;
         DateTimeOffset _lastTime = default;
 
-        void UpdateBearingAndDistance(double curLat, double curLon, double tgtLat, double tgtLon)
+        void UpdateBearingAndDistance(Location loc, double tgtLat, double tgtLon)
         {
+            double curLat = loc.Latitude;
+            double curLon = loc.Longitude;
+
             var bearing = BearingDegrees(curLat, curLon, tgtLat, tgtLon);
             _currentBearing = bearing;
             var distMeters = HaversineInMeters(curLat, curLon, tgtLat, tgtLon);
             var distText = distMeters >= 1000 ? (distMeters / 1000.0).ToString("0.0") + " km" : Math.Round(distMeters).ToString() + " m";
             DistanceText = distText;
 
+            // Reject poor accuracy GPS readings to avoid false speed spikes on UI
+            if (loc.Accuracy.HasValue && loc.Accuracy.Value > AccuracyThresholdMeters)
+            {
+                double currentAvg = _speedHistory.Count > 0 ? _speedHistory.Average() : 0.0;
+                CurrentSpeedText = currentAvg.ToString("0.0") + " mph";
+                return;
+            }
+
             double speedMph = 0.0;
-            if (_lastLocation != null && _lastTime != default)
+            if (loc.Speed.HasValue)
+            {
+                speedMph = loc.Speed.Value * 2.23693629;
+            }
+            else if (_lastLocation != null && _lastTime != default)
             {
                 var dt = (DateTimeOffset.UtcNow - _lastTime).TotalSeconds;
                 if (dt > 0)
@@ -178,14 +213,18 @@ namespace WearCar.ViewModels
                 }
             }
 
-            // Apply moving average smoothing to reduce GPS noise
+            // Noise gate: clamp low speeds below 1.5 mph to 0.0 to prevent stationary drift
+            if (speedMph < LowSpeedNoiseGateMph)
+                speedMph = 0.0;
+
+            // Apply 5-point moving average smoothing to reduce GPS noise
             _speedHistory.Enqueue(speedMph);
             if (_speedHistory.Count > SpeedHistorySize)
                 _speedHistory.Dequeue();
 
             double smoothedSpeed = _speedHistory.Average();
             CurrentSpeedText = smoothedSpeed.ToString("0.0") + " mph";
-            _lastLocation = new { Latitude = curLat, Longitude = curLon };
+            _lastLocation = loc;
             _lastTime = DateTimeOffset.UtcNow;
 
             // Compute arrow length on a logarithmic scale so it grows quickly at short ranges then tapers off

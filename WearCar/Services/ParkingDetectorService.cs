@@ -15,13 +15,18 @@ namespace WearCar.Services
 		Location? _prevLocation;
 		private DateTimeOffset _prevTime;
 		private bool _aboveThreshold;
+		private DateTimeOffset _aboveSince;
+		private bool _wasMoving;
 
 		private const double MphThreshold = 10.0;
 		readonly TimeSpan BelowDuration = TimeSpan.FromSeconds(10);
+		readonly TimeSpan AboveDuration = TimeSpan.FromSeconds(20);
 
-		// Speed smoothing: keep last 3 speeds for moving average
-		private readonly Queue<double> _speedHistory = new Queue<double>(3);
-		private const int SpeedHistorySize = 3;
+		// Speed smoothing: keep last 5 speeds for moving average (5-second window)
+		private readonly Queue<double> _speedHistory = new Queue<double>(5);
+		private const int SpeedHistorySize = 5;
+		private const double LowSpeedNoiseGateMph = 1.5;
+		private const double AccuracyThresholdMeters = 25.0;
 
 		public event EventHandler<Location> ParkedLocationSaved;
 
@@ -47,35 +52,54 @@ namespace WearCar.Services
 		}
 
 		async Task LoopAsync(CancellationToken token)
+		{
+			while (!token.IsCancellationRequested)
 			{
-				var request = new GeolocationRequest(GeolocationAccuracy.Best);
-				while (!token.IsCancellationRequested)
+				int loopDelayMs = 1000;
+				try
 				{
-					try
-					{
-						var loc = await Geolocation.GetLocationAsync(request, token);
-						if (loc != null)
-						{
-							var now = DateTimeOffset.UtcNow;
-							double speedMph = await CalculateSpeedMph(loc, now);
+					// Adaptive Power State: High accuracy & 1s polling while driving/confirming,
+					// Low power & 10s polling while idle/stationary
+					bool isHighPrecisionActive = _aboveThreshold || _wasMoving;
+					var accuracy = isHighPrecisionActive ? GeolocationAccuracy.Best : GeolocationAccuracy.Medium;
+					loopDelayMs = isHighPrecisionActive ? 1000 : 10000;
 
-							if (speedMph >= MphThreshold)
+					var request = new GeolocationRequest(accuracy, TimeSpan.FromSeconds(5));
+					var loc = await Geolocation.GetLocationAsync(request, token);
+					if (loc != null)
+					{
+						var now = DateTimeOffset.UtcNow;
+						double speedMph = await CalculateSpeedMph(loc, now);
+
+						if (speedMph >= MphThreshold)
+						{
+							if (!_aboveThreshold)
 							{
-								// Currently driving
 								_aboveThreshold = true;
+								_aboveSince = now;
 							}
-							else if (_aboveThreshold)
+							else if (!_wasMoving && (now - _aboveSince) >= AboveDuration)
 							{
-								// Transitioned from driving (≥5 mph) to not driving (<5 mph)
-								// Confirm speed stays below threshold for BelowDuration, then save
+								_wasMoving = true;
+							}
+						}
+						else if (_aboveThreshold)
+						{
+							// Transitioned from driving (≥10 mph) to not driving (<10 mph)
+							// Confirm speed stays below threshold for BelowDuration if vehicle was moving
+							if (_wasMoving)
+							{
 								var lowStart = DateTimeOffset.UtcNow;
 								bool remainedBelow = true;
 								Location latest = loc;
 
+								// Always use Best accuracy during parking location confirmation
+								var confirmRequest = new GeolocationRequest(GeolocationAccuracy.Best, TimeSpan.FromSeconds(5));
+
 								while (!token.IsCancellationRequested && (DateTimeOffset.UtcNow - lowStart) < BelowDuration)
 								{
 									await Task.Delay(1000, token);
-									var l2 = await Geolocation.GetLocationAsync(request, token);
+									var l2 = await Geolocation.GetLocationAsync(confirmRequest, token);
 									if (l2 == null)
 									{
 										remainedBelow = false;
@@ -94,48 +118,60 @@ namespace WearCar.Services
 								{
 									SaveParked(latest);
 								}
-
-								_aboveThreshold = false;
 							}
 
-							_prevLocation = loc;
-							_prevTime = now;
+							_aboveThreshold = false;
+							_wasMoving = false;
 						}
-					}
-					catch (OperationCanceledException)
-					{
-						break;
-					}
-					catch (Exception) { }
 
-					try { await Task.Delay(1000, token); } catch { }
+						_prevLocation = loc;
+						_prevTime = now;
+					}
 				}
+				catch (OperationCanceledException)
+				{
+					break;
+				}
+				catch (Exception) { }
+
+				try { await Task.Delay(loopDelayMs, token); } catch { }
 			}
+		}
 
 		async Task<double> CalculateSpeedMph(Location loc, DateTimeOffset now)
+		{
+			// Reject poor accuracy GPS readings to avoid false speed spikes
+			if (loc.Accuracy.HasValue && loc.Accuracy.Value > AccuracyThresholdMeters)
 			{
-				double rawSpeed = 0.0;
-
-				if (loc.Speed.HasValue)
-					rawSpeed = loc.Speed.Value * 2.23693629; // m/s to mph
-				else if (_prevLocation != null && _prevTime != default)
-				{
-					var dt = (now - _prevTime).TotalSeconds;
-					if (dt > 0)
-					{
-						var meters = HaversineInMeters(_prevLocation.Latitude, _prevLocation.Longitude, loc.Latitude, loc.Longitude);
-						var mps = meters / dt;
-						rawSpeed = mps * 2.23693629;
-					}
-				}
-
-				// Apply moving average smoothing to reduce GPS noise
-				_speedHistory.Enqueue(rawSpeed);
-				if (_speedHistory.Count > SpeedHistorySize)
-					_speedHistory.Dequeue();
-
-				return _speedHistory.Average();
+				return _speedHistory.Count > 0 ? _speedHistory.Average() : 0.0;
 			}
+
+			double rawSpeed = 0.0;
+
+			if (loc.Speed.HasValue)
+				rawSpeed = loc.Speed.Value * 2.23693629; // m/s to mph
+			else if (_prevLocation != null && _prevTime != default)
+			{
+				var dt = (now - _prevTime).TotalSeconds;
+				if (dt > 0)
+				{
+					var meters = HaversineInMeters(_prevLocation.Latitude, _prevLocation.Longitude, loc.Latitude, loc.Longitude);
+					var mps = meters / dt;
+					rawSpeed = mps * 2.23693629;
+				}
+			}
+
+			// Noise gate: clamp low speeds below 1.5 mph to 0.0 to prevent stationary drift
+			if (rawSpeed < LowSpeedNoiseGateMph)
+				rawSpeed = 0.0;
+
+			// Apply 5-point moving average smoothing to reduce GPS noise
+			_speedHistory.Enqueue(rawSpeed);
+			if (_speedHistory.Count > SpeedHistorySize)
+				_speedHistory.Dequeue();
+
+			return _speedHistory.Average();
+		}
 
 		double HaversineInMeters(double lat1, double lon1, double lat2, double lon2)
 		{
