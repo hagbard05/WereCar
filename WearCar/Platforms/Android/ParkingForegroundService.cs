@@ -31,7 +31,7 @@ namespace WearCar.Platforms.Android
 				PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable);
 
 			var builder = new NotificationCompat.Builder(this, ChannelId)
-				.SetContentTitle("WearCar Active")
+				.SetContentTitle("Dude, Find My Car Active")
 				.SetContentText("Monitoring location in background for automatic parking detection.")
 				.SetSmallIcon(Resource.Mipmap.appicon)
 				.SetOngoing(true)
@@ -63,10 +63,10 @@ namespace WearCar.Platforms.Android
 		{
 			if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
 			{
-				var channelName = "WearCar Parking Detector";
+				var channelName = "Dude, Find My Car Parking Detector";
 				var channel = new NotificationChannel(ChannelId, channelName, NotificationImportance.Low)
 				{
-					Description = "Keeps WearCar parking detector running continuously in the background."
+					Description = "Keeps Dude, Find My Car parking detector running continuously in the background."
 				};
 
 				var manager = (NotificationManager?)GetSystemService(NotificationService);

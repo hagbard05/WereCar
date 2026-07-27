@@ -28,7 +28,7 @@
 		<MauiXamlInflator>SourceGen</MauiXamlInflator>
 
 		<!-- Display name -->
-		<ApplicationTitle>WearCar</ApplicationTitle>
+		<ApplicationTitle>Dude, Find My Car</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.HolmesSoft.wearcar</ApplicationId>
