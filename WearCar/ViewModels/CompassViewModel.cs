@@ -227,22 +227,14 @@ namespace WearCar.ViewModels
             _lastLocation = loc;
             _lastTime = DateTimeOffset.UtcNow;
 
-            // Compute arrow length on a logarithmic scale so it grows quickly at short ranges then tapers off
+            // Compute arrow length: grows longer as distance to parked car increases
             try
             {
-                const double minLen = 40.0; // min arrow length (px)
-                const double maxLen = 240.0; // max arrow length (px)
-                // Use log10(dist + 10) so distances under ~10m still show growth and avoid negative/zero logs
-                double valueForLog = Math.Max(0.0, distMeters);
-                double len = minLen;
-                if (valueForLog > 0.0)
-                {
-                    // scaleFactor controls how quickly the length grows; tuned empirically
-                    double scaleFactor = 28.0;
-                    len = minLen + Math.Log10(valueForLog + 10.0) * scaleFactor;
-                }
-                if (len < minLen) len = minLen;
-                if (len > maxLen) len = maxLen;
+                const double minLen = 50.0;  // short arrow when close (0m)
+                const double maxLen = 220.0; // long arrow when far (300m+)
+                double dist = Math.Max(0.0, distMeters);
+                double scale = Math.Min(1.0, Math.Log10(dist + 1.0) / Math.Log10(301.0));
+                double len = minLen + (maxLen - minLen) * scale;
                 ArrowLength = len;
             }
             catch { }
