@@ -195,6 +195,7 @@ namespace WearCar.Services
 
 				ParkedLocationSaved?.Invoke(this, loc);
 
+#if DEBUG
 				MainThread.BeginInvokeOnMainThread(async () =>
 				{
 					try
@@ -206,6 +207,7 @@ namespace WearCar.Services
 					}
 					catch { }
 				});
+#endif
 			}
 			catch { }
 		}
