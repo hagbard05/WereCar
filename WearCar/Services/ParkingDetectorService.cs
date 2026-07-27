@@ -18,7 +18,7 @@ namespace WearCar.Services
 		private DateTimeOffset _aboveSince;
 		private bool _wasMoving;
 
-		private const double MphThreshold = 10.0;
+		private const double MphThreshold = 5.0;
 		readonly TimeSpan BelowDuration = TimeSpan.FromSeconds(10);
 		readonly TimeSpan AboveDuration = TimeSpan.FromSeconds(20);
 
