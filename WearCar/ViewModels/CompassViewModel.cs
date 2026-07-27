@@ -230,8 +230,8 @@ namespace WearCar.ViewModels
             // Compute arrow length: grows longer as distance to parked car increases
             try
             {
-                const double minLen = 50.0;  // short arrow when close (0m)
-                const double maxLen = 220.0; // long arrow when far (300m+)
+                const double minLen = 100.0; // short arrow when close (0m)
+                const double maxLen = 340.0; // long arrow when far (300m+)
                 double dist = Math.Max(0.0, distMeters);
                 double scale = Math.Min(1.0, Math.Log10(dist + 1.0) / Math.Log10(301.0));
                 double len = minLen + (maxLen - minLen) * scale;
