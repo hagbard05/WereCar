@@ -47,10 +47,18 @@ namespace WearCar.Views
 			{
 				try
 				{
-					MainThread.BeginInvokeOnMainThread(async () =>
+					MainThread.BeginInvokeOnMainThread(() =>
 					{
-						// rotate smoothly (degrees)
-						await ArrowContainer.RotateTo(_vm.ArrowRotation, 350, Easing.SinInOut);
+						double target = _vm.ArrowRotation;
+						double current = ArrowContainer.Rotation;
+
+						// Calculate shortest path delta in range [-180, 180] degrees
+						double delta = (target - (current % 360) + 540) % 360 - 180;
+						double targetRotation = current + delta;
+
+						// Cancel any ongoing rotation animation and update rapidly (80ms linear) for instant responsiveness
+						ArrowContainer.CancelAnimations();
+						ArrowContainer.RotateTo(targetRotation, 80, Easing.Linear);
 					});
 				}
 				catch { }
