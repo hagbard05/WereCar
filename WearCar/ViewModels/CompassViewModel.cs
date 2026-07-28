@@ -227,21 +227,35 @@ namespace WearCar.ViewModels
             _lastLocation = loc;
             _lastTime = DateTimeOffset.UtcNow;
 
-            // Compute arrow length: grows longer as distance to parked car increases
-            try
-            {
-                const double minLen = 100.0; // short arrow when close (0m)
-                const double maxLen = 340.0; // long arrow when far (300m+)
-                double dist = Math.Max(0.0, distMeters);
-                double scale = Math.Min(1.0, Math.Log10(dist + 1.0) / Math.Log10(301.0));
-                double len = minLen + (maxLen - minLen) * scale;
-                ArrowLength = len;
-            }
-            catch { }
+            UpdateArrowLength(distMeters);
 
             var rot = bearing - _latestHeading;
             rot = (rot + 360) % 360;
             ArrowRotation = rot;
+        }
+
+        double _minLen = 150.0;
+        double _maxLen = 450.0;
+        double _lastDistMeters = 0.0;
+
+        public void SetScreenHeightBounds(double minLen, double maxLen)
+        {
+            _minLen = Math.Max(100.0, minLen);
+            _maxLen = Math.Max(_minLen + 50.0, maxLen);
+            UpdateArrowLength(_lastDistMeters);
+        }
+
+        void UpdateArrowLength(double distMeters)
+        {
+            _lastDistMeters = distMeters;
+            try
+            {
+                double dist = Math.Max(0.0, distMeters);
+                double scale = Math.Min(1.0, Math.Log10(dist + 1.0) / Math.Log10(301.0));
+                double len = _minLen + (_maxLen - _minLen) * scale;
+                ArrowLength = len;
+            }
+            catch { }
         }
 
         double BearingDegrees(double lat1, double lon1, double lat2, double lon2)

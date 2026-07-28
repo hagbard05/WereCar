@@ -41,6 +41,29 @@ namespace WearCar.Views
 			catch { }
 		}
 
+		private void CompassArea_SizeChanged(object? sender, EventArgs e)
+		{
+			try
+			{
+				if (CompassArea.Width <= 0 || CompassArea.Height <= 0)
+					return;
+
+				double availWidth = CompassArea.Width;
+				double availHeight = CompassArea.Height;
+
+				// Scale arrow width up to ~55% of available width (minimum 120, maximum 280)
+				double arrowWidth = Math.Clamp(availWidth * 0.55, 120.0, 280.0);
+				HeadImage.WidthRequest = arrowWidth;
+
+				// Dynamically scale arrow length from 40% of available screen height (close) to 92% (far)
+				double minHeight = availHeight * 0.40;
+				double maxHeight = availHeight * 0.92;
+
+				_vm.SetScreenHeightBounds(minHeight, maxHeight);
+			}
+			catch { }
+		}
+
 		void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
 		{
 			if (e.PropertyName == nameof(_vm.ArrowRotation))

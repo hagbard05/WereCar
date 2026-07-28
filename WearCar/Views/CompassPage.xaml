@@ -3,22 +3,21 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="WearCar.Views.CompassPage"
              Title="Find Car">
-    <Grid RowDefinitions="Auto,*" Padding="12">
+    <Grid RowDefinitions="Auto,*,Auto" Padding="12">
         <StackLayout Orientation="Horizontal" HorizontalOptions="Center" Spacing="12">
-            <Label Text="Distance:" VerticalOptions="Center" />
-            <Label Text="{Binding DistanceText}" FontAttributes="Bold" VerticalOptions="Center" />
+            <Label Text="Distance:" VerticalOptions="Center" FontSize="18" />
+            <Label Text="{Binding DistanceText}" FontAttributes="Bold" FontSize="18" VerticalOptions="Center" />
         </StackLayout>
 
-        <Grid Row="1">
-            <Grid>
-                <ContentView x:Name="ArrowContainer" HorizontalOptions="Center" VerticalOptions="Center">
-                    <Image x:Name="HeadImage" Source="compass_arrow_pointer.svg" Aspect="Fill" WidthRequest="110" HeightRequest="110" />
-                </ContentView>
-                <StackLayout Orientation="Vertical" HorizontalOptions="Center" VerticalOptions="End" Spacing="4">
-                    <Label Text="Pointing to parked car" HorizontalOptions="Center" />
-                    <Label x:Name="SpeedLabel" Text="{Binding CurrentSpeedText}" HorizontalOptions="Center" FontSize="12" TextColor="Gray" />
-                </StackLayout>
-            </Grid>
+        <Grid x:Name="CompassArea" Grid.Row="1" HorizontalOptions="FillAndExpand" VerticalOptions="FillAndExpand" SizeChanged="CompassArea_SizeChanged">
+            <ContentView x:Name="ArrowContainer" HorizontalOptions="Center" VerticalOptions="Center">
+                <Image x:Name="HeadImage" Source="compass_arrow_pointer.svg" Aspect="Fill" WidthRequest="180" HeightRequest="200" />
+            </ContentView>
         </Grid>
+
+        <StackLayout Grid.Row="2" Orientation="Vertical" HorizontalOptions="Center" VerticalOptions="End" Spacing="4" Margin="0,8,0,0">
+            <Label Text="Pointing to parked car" HorizontalOptions="Center" />
+            <Label x:Name="SpeedLabel" Text="{Binding CurrentSpeedText}" HorizontalOptions="Center" FontSize="12" TextColor="Gray" />
+        </StackLayout>
     </Grid>
 </ContentPage>
