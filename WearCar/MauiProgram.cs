@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
+using Plugin.AdMob;
 using WearCar.Services;
 using WearCar.ViewModels;
 using WearCar.Views;
@@ -12,6 +13,7 @@ namespace WearCar
 			var builder = MauiApp.CreateBuilder();
 			builder
 				.UseMauiApp<App>()
+				.UseAdMob()
 				.ConfigureFonts(fonts =>
 				{
 					fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

@@ -18,8 +18,8 @@ namespace WearCar.Services
 		private DateTimeOffset _aboveSince;
 		private bool _wasMoving;
 
-		private const double MphThreshold = 5.0;
-		readonly TimeSpan BelowDuration = TimeSpan.FromSeconds(10);
+		private const double MphThreshold = 6.0;
+		readonly TimeSpan BelowDuration = TimeSpan.FromSeconds(15);
 		readonly TimeSpan AboveDuration = TimeSpan.FromSeconds(20);
 
 		// Speed smoothing: keep last 5 speeds for moving average (5-second window)
