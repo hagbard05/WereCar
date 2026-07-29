@@ -21,7 +21,7 @@
             <Label x:Name="SpeedLabel" Text="{Binding CurrentSpeedText}" HorizontalOptions="Center" FontSize="12" TextColor="Gray" />
         </StackLayout>
 
-        <!-- Test Banner Ad Unit ID: ca-app-pub-3940256099942544/6300978111 -->
+        <!-- Real Banner Ad Unit ID -->
         <controls:BannerAd Grid.Row="3"
                            AdUnitId="ca-app-pub-4574428511610255/1704577836"
                            HorizontalOptions="Center"

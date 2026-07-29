@@ -85,7 +85,7 @@ namespace WearCar.Services
 						}
 						else if (_aboveThreshold)
 						{
-							// Transitioned from driving (≥10 mph) to not driving (<10 mph)
+							// Transitioned from driving (≥6 mph) to not driving (<6 mph)
 							// Confirm speed stays below threshold for BelowDuration if vehicle was moving
 							if (_wasMoving)
 							{

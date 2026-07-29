@@ -57,7 +57,7 @@ keytool -genkey -v -keystore release.keystore -alias wearcar-key -keyalg RSA -ke
 To generate the production `.aab` package for Google Play:
 
 ```powershell
-dotnet publish C:\Users\admin\source\repos\WereCar\WearCar\WearCar.csproj -f net10.0-android -c Release -p:AndroidPackageFormat=aab -p:AndroidKeyStore=true -p:AndroidSigningKeyStore=release.keystore -p:AndroidSigningKeyAlias=wearcar-key -p:AndroidSigningKeyPass=YOUR_KEY_PASSWORD -p:AndroidSigningStorePass=YOUR_STORE_PASSWORD
+dotnet publish C:\Users\admin\source\repos\WereCar\WearCar\WearCar.csproj -f net10.0-android -c Release -p:AndroidPackageFormat=aab -p:AndroidKeyStore=true -p:AndroidSigningKeyStore=C:\Users\admin\source\repos\WereCar\release.keystore -p:AndroidSigningKeyAlias=wearcar-key -p:AndroidSigningKeyPass=YOUR_KEY_PASSWORD -p:AndroidSigningStorePass=YOUR_STORE_PASSWORD
 ```
 
 The compiled package will be saved at:
